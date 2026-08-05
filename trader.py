@@ -1,4 +1,4 @@
-"""
+﻿"""
 - get_prices(): текущие цены BTC/ETH через публичный Binance API (для логов, без ключей)
 - execute_trade(): заглушка исполнения. В "paper" режиме просто логирует.
   Для "live" режима сюда нужно подключить твою существующую web3/Uniswap-логику
@@ -10,10 +10,16 @@ import config
 
 
 def get_prices():
-    """Возвращает (btc_price, eth_price) в USD. При ошибке — (None, None)."""
+    """Возвращает (btc_price, eth_price) в USD. При ошибке - (None, None).
+
+    Используем data-api.binance.vision вместо api.binance.com - обычный
+    Binance API блокирует запросы с американских IP (юридические причины),
+    а GitHub Actions физически работает из дата-центров США. Это
+    официальное read-only зеркало Binance без гео-ограничений.
+    """
     try:
         resp = requests.get(
-            "https://api.binance.com/api/v3/ticker/price",
+            "https://data-api.binance.vision/api/v3/ticker/price",
             params={"symbols": '["BTCUSDT","ETHUSDT"]'},
             timeout=10,
         )
@@ -29,15 +35,13 @@ def execute_trade(action: str, avg_sentiment: float, n_headlines: int):
     """
     action: 'BUY' или 'SELL'.
 
-    Сейчас — заглушка. В paper-режиме ничего реально не исполняет,
+    Сейчас - заглушка. В paper-режиме ничего реально не исполняет,
     только сигнализирует, что "здесь была бы сделка".
 
     Чтобы подключить реальное исполнение на Base через Uniswap V3:
-    1. Подключи свой существующий модуль работы с некастодиальным кошельком
-       (тот же, что использовался в EMA/RSI-версии бота).
-    2. Здесь вызови его функцию свапа ETH<->USDC с учётом:
-       - размера позиции (% от $100 капитала)
-       - stop-loss / take-profit уровней
+    1. Подключи свой существующий модуль работы с некастодиальным кошельком.
+    2. Здесь вызови его функцию свапа ETH<->USDC с учётом размера позиции
+       и stop-loss/take-profit уровней.
     3. Верни True/False (успех/неуспех) и фактическую цену исполнения.
     """
     if config.MODE == "paper":
