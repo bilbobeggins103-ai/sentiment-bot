@@ -1,4 +1,4 @@
-﻿name: Sentiment Bot Cycle
+name: Sentiment Bot Cycle
 
 on:
   schedule:
@@ -33,5 +33,13 @@ jobs:
           for f in sentiment_log.csv seen_items.json recent_scores.json trade_log.csv last_trade.json; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
-          git diff --staged --quiet || git commit -m "bot cycle: $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git push
+          if ! git diff --staged --quiet; then
+            git commit -m "bot cycle: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            for i in 1 2 3 4 5; do
+              if git pull --rebase origin main && git push; then
+                break
+              fi
+              echo "Push failed, retry $i..."
+              sleep $((RANDOM % 10 + 1))
+            done
+          fi
